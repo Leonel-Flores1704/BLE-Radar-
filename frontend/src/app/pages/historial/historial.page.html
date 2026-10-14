@@ -1,0 +1,59 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Historial</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)" [disabled]="!api.baseUrl()">
+    <ion-refresher-content pullingText="Desliza para actualizar" refreshingSpinner="crescent"></ion-refresher-content>
+  </ion-refresher>
+
+  @if (!api.baseUrl()) {
+    <div class="ion-padding">
+      <p>No hay URL de la API configurada.</p>
+      <ion-button routerLink="/tabs/config">Ir a Configuración</ion-button>
+    </div>
+  } @else {
+    @if (error(); as err) {
+      <ion-card color="danger">
+        <ion-card-content>
+          <p>No se pudo cargar el historial.</p>
+          <p>{{ err }}</p>
+          <ion-button size="small" fill="outline" color="light" (click)="load()">Reintentar</ion-button>
+        </ion-card-content>
+      </ion-card>
+    }
+
+    @if (loading() && !loaded()) {
+      <div class="ion-padding ion-text-center"><ion-spinner></ion-spinner></div>
+    }
+
+    @if (loaded()) {
+      <ion-list>
+        @for (o of items(); track o.id) {
+          <ion-item>
+            <ion-label class="ion-text-wrap">
+              <h2>{{ o.nombre || o.device_id }}</h2>
+              @if (o.nombre) {
+                <p>{{ o.device_id }}</p>
+              }
+              <p>{{ formatDate(o.creado_en) }}</p>
+              @if (o.nota) {
+                <p><ion-text color="dark">{{ o.nota }}</ion-text></p>
+              }
+            </ion-label>
+            <ion-note slot="end">
+              @if (o.rssi !== null) { {{ o.rssi }} dBm } @else { RSSI no disponible }
+            </ion-note>
+          </ion-item>
+        } @empty {
+          <div class="ion-padding ion-text-center">
+            <p>Todavía no hay observaciones guardadas.</p>
+            <p>Selecciona un dispositivo en el Radar y guarda una observación.</p>
+          </div>
+        }
+      </ion-list>
+    }
+  }
+</ion-content>
