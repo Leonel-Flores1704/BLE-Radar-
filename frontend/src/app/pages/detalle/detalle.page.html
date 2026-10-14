@@ -1,0 +1,130 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/radar" text="Radar"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Detalle</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  @if (device(); as d) {
+    <ion-list>
+      <ion-item>
+        <ion-label>
+          <p>Nombre</p>
+          <h2>
+            @if (d.nombre) { {{ d.nombre }} } @else { <ion-text color="medium"><em>Sin nombre</em></ion-text> }
+          </h2>
+        </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label class="ion-text-wrap">
+          <p>Identificador (deviceId)</p>
+          <h2 class="mono">{{ d.deviceId }}</h2>
+        </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>
+          <p>RSSI</p>
+          <h2>@if (d.rssi !== null) { {{ d.rssi }} dBm } @else { RSSI no disponible }</h2>
+        </ion-label>
+      </ion-item>
+      @if (d.txPower !== undefined) {
+        <ion-item>
+          <ion-label>
+            <p>Potencia de transmisión</p>
+            <h2>@if (d.txPower !== null) { {{ d.txPower }} dBm } @else { No disponible }</h2>
+          </ion-label>
+        </ion-item>
+      }
+      @if (d.serviceUuids) {
+        <ion-item>
+          <ion-label class="ion-text-wrap">
+            <p>UUIDs de servicio anunciados</p>
+            @for (uuid of d.serviceUuids; track uuid) {
+              <h3 class="mono">{{ uuid }}</h3>
+            }
+          </ion-label>
+        </ion-item>
+      }
+      @if (d.manufacturerData) {
+        <ion-item>
+          <ion-label class="ion-text-wrap">
+            <p>Datos de fabricante</p>
+            <pre class="mono">{{ d.manufacturerData }}</pre>
+          </ion-label>
+        </ion-item>
+      }
+      @if (d.serviceData) {
+        <ion-item>
+          <ion-label class="ion-text-wrap">
+            <p>Datos de servicio</p>
+            <pre class="mono">{{ d.serviceData }}</pre>
+          </ion-label>
+        </ion-item>
+      }
+      <ion-item>
+        <ion-label>
+          <p>Último anuncio recibido</p>
+          <h3>@if (d.visto) { {{ d.visto | date: 'dd/MM/yyyy HH:mm:ss' }} } @else { No se ha visto en el escaneo (vinculado) }</h3>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Leer dispositivo (nombre y batería)</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        @let r = reading();
+        @if (r.status === 'reading') {
+          <p><ion-spinner name="dots"></ion-spinner> Conectando y leyendo…</p>
+        } @else if (r.status === 'ok') {
+          <p>Nombre (0x2A00): <strong>{{ r.nombre ?? 'no disponible' }}</strong></p>
+          <p>
+            Batería (0x180F):
+            @if (r.bateria !== null) { <strong>{{ r.bateria }} %</strong> } @else { <strong>no disponible</strong> }
+          </p>
+        } @else if (r.status === 'error') {
+          <ion-text color="danger"><p>{{ r.message }}</p></ion-text>
+        }
+        <ion-button size="small" fill="outline" (click)="readDevice()" [disabled]="reading().status === 'reading'">
+          Conectar y leer
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Nueva observación</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        @if (!api.baseUrl()) {
+          <ion-text color="warning">
+            <p>Configura la URL de la API antes de guardar. <a routerLink="/tabs/config">Ir a Configuración</a></p>
+          </ion-text>
+        }
+        <ion-textarea
+          label="Nota breve"
+          labelPlacement="stacked"
+          fill="outline"
+          [maxlength]="noteMax"
+          [counter]="true"
+          [autoGrow]="true"
+          placeholder="Ej. reloj IDW26 en el escritorio, a 1 m"
+          [value]="note()"
+          (ionInput)="note.set($event.detail.value ?? '')"
+        ></ion-textarea>
+        <ion-button expand="block" class="ion-margin-top" (click)="save()" [disabled]="saving() || !api.baseUrl()">
+          @if (saving()) { <ion-spinner name="dots"></ion-spinner> } @else { Guardar observación }
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  } @else {
+    <div class="ion-padding">
+      <p>No hay dispositivo seleccionado.</p>
+      <ion-button routerLink="/tabs/radar">Volver al Radar</ion-button>
+    </div>
+  }
+</ion-content>
