@@ -1,0 +1,121 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Radar BLE</ion-title>
+    <ion-buttons slot="end">
+      @if (ble.scanning()) {
+        <ion-button color="danger" (click)="stop()">
+          <ion-icon slot="start" name="stop"></ion-icon>
+          Detener
+        </ion-button>
+      } @else {
+        <ion-button color="primary" (click)="start()">
+          <ion-icon slot="start" name="play"></ion-icon>
+          Iniciar
+        </ion-button>
+      }
+    </ion-buttons>
+  </ion-toolbar>
+  @if (ble.scanning()) {
+    <ion-progress-bar type="indeterminate"></ion-progress-bar>
+  }
+</ion-header>
+
+<ion-content>
+  @if (!api.baseUrl()) {
+    <ion-card color="warning">
+      <ion-card-content>
+        Aún no hay URL de la API configurada; podrás buscar, pero no guardar observaciones.
+        <a routerLink="/tabs/config">Configurar ahora</a>
+      </ion-card-content>
+    </ion-card>
+  }
+
+  @if (ble.error(); as err) {
+    <ion-card color="danger">
+      <ion-card-content>
+        <p>{{ err.message }}</p>
+        @if (err.kind === 'permission') {
+          <ion-button size="small" fill="outline" color="light" (click)="ble.openAppSettings()">Abrir ajustes de la app</ion-button>
+        }
+        @if (err.kind === 'bluetooth-off') {
+          <ion-button size="small" fill="outline" color="light" (click)="ble.openBluetoothSettings()">Abrir ajustes de Bluetooth</ion-button>
+        }
+        <ion-button size="small" fill="outline" color="light" (click)="start()">Reintentar</ion-button>
+      </ion-card-content>
+    </ion-card>
+  }
+
+  @if (ble.bonded().length) {
+    <ion-list>
+      <ion-list-header>
+        <ion-label>Vinculados a este celular</ion-label>
+      </ion-list-header>
+      @for (d of ble.bonded(); track d.deviceId) {
+        <ion-item button detail (click)="open(d)">
+          <ion-label>
+            <h2>{{ d.nombre || 'Sin nombre' }}</h2>
+            <p class="mono">{{ d.deviceId }}</p>
+          </ion-label>
+          @if (d.rssi !== null) {
+            <ion-badge slot="end" [color]="strengthColor(d.rssi)">{{ d.rssi }} dBm</ion-badge>
+          } @else {
+            <ion-note slot="end">Vinculado</ion-note>
+          }
+        </ion-item>
+      }
+    </ion-list>
+  }
+
+  <ion-list>
+    <ion-list-header>
+      <ion-label>
+        @if (ble.scanning()) {
+          Buscando… (se detiene sola a los {{ ble.scanTimeoutSeconds }} s)
+        } @else {
+          Búsqueda detenida
+        }
+        · {{ list().length }} dispositivo(s)
+      </ion-label>
+    </ion-list-header>
+    <ion-item lines="full">
+      <ion-toggle [checked]="sortByRssi()" (ionChange)="sortByRssi.set($event.detail.checked)">
+        Ordenar por intensidad (RSSI)
+      </ion-toggle>
+    </ion-item>
+
+    @for (d of list(); track d.deviceId) {
+      <ion-item button detail (click)="open(d)">
+        <ion-label>
+          <h2>
+            @if (d.nombre) {
+              {{ d.nombre }}
+            } @else {
+              <ion-text color="medium"><em>Sin nombre@if (d.fabricante) { · {{ d.fabricante }} }</em></ion-text>
+            }
+          </h2>
+          <p class="mono">{{ d.deviceId }}</p>
+          @if (d.rssi !== null) {
+            <ion-progress-bar class="strength" [value]="strength(d.rssi)" [color]="strengthColor(d.rssi)"></ion-progress-bar>
+          }
+        </ion-label>
+        @if (d.rssi !== null) {
+          <ion-badge slot="end" [color]="strengthColor(d.rssi)">{{ d.rssi }} dBm</ion-badge>
+        } @else {
+          <ion-note slot="end">RSSI no disponible</ion-note>
+        }
+      </ion-item>
+    } @empty {
+      <ion-item lines="none">
+        <ion-label class="ion-text-wrap">
+          <p>
+            @if (ble.scanning()) {
+              Esperando anuncios BLE… Acerca el periférico y verifica que no esté conectado a otro teléfono.
+            } @else {
+              Pulsa «Iniciar» para buscar dispositivos BLE cercanos.
+            }
+          </p>
+        </ion-label>
+      </ion-item>
+    }
+  </ion-list>
+</ion-content>
