@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package com.equipofued.bleradar;
 
 import com.getcapacitor.BridgeActivity;
 
