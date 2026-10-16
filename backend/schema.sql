@@ -1,0 +1,13 @@
+CREATE DATABASE IF NOT EXISTS reto_ble_radar CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE reto_ble_radar;
+
+CREATE TABLE IF NOT EXISTS observaciones (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  device_id VARCHAR(128) NOT NULL,
+  nombre VARCHAR(120) NULL,
+  rssi SMALLINT NULL,
+  nota VARCHAR(255) NOT NULL DEFAULT '',
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_device_id (device_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
